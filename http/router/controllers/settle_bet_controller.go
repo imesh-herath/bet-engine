@@ -70,7 +70,7 @@ func SettleBet(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if updated {
-				log.Printf("Settled bets for user %d on event %d (Result: %s, Winnings: %.2f)\n", uid, req.EventID, req.Result, winnings)
+				log.Printf("Settled bets for user %d on event %d (Result: %d, Winnings: %.2f)\n", uid, req.EventID, req.Result, winnings)
 			}
 		}(userID, userBets)
 	}
