@@ -5,12 +5,12 @@ type Bet struct {
 	EventID int     `json:"event_id"`
 	Odds    float64 `json:"odds"`
 	Amount  float64 `json:"amount"`
-	Status  string  `json:"status"`
+	Status  int     `json:"status"`
 }
 
 type SettleReq struct {
-	EventID int    `json:"event_id"`
-	Result  string `json:"result"`
+	EventID int `json:"event_id"`
+	Result  int `json:"result"`
 }
 
 type UserCreateReq struct {
