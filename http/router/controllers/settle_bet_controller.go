@@ -8,37 +8,11 @@ import (
 	"sync"
 )
 
-// func SettleBet(w http.ResponseWriter, r *http.Request) {
-// 	req := entities.Req{}
-
-// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-// 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-// 		log.Println("Error decoding settle request:", err)
-// 		return
-// 	}
-
-// 	MU.Lock()
-// 	defer MU.Unlock()
-
-// 	for userID, userBets := range Bets {
-// 		for _, bet := range userBets {
-// 			if bet.EventID == req.EventID && bet.Status == "pending" {
-// 				if req.Result == "win" {
-// 					winAmount := bet.Amount * bet.Odds
-// 					Balances[userID] += winAmount
-// 					bet.Status = "win"
-// 					log.Printf("User %d won %.2f on event %d\n", userID, winAmount, req.EventID)
-// 				} else if req.Result == "lose" {
-// 					bet.Status = "lose"
-// 					log.Printf("User %d lost bet on event %d\n", userID, req.EventID)
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write([]byte("Event settled"))
-// }
+const (
+	WIN     = 0
+	LOSE    = 1
+	PENDING = 2
+)
 
 func SettleBet(w http.ResponseWriter, r *http.Request) {
 	req := entities.SettleReq{}
@@ -48,7 +22,7 @@ func SettleBet(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error decoding settle request:", err)
 		return
 	}
-	if req.Result != "win" && req.Result != "lose" {
+	if req.Result != WIN && req.Result != LOSE {
 		http.Error(w, "Result must be 'win' or 'lose'", http.StatusBadRequest)
 		return
 	}
@@ -70,20 +44,29 @@ func SettleBet(w http.ResponseWriter, r *http.Request) {
 			updated := false
 			var winnings float64
 
+			// Check if the user has any pending bets for the event
+			hasPendingBets := false
+
 			for _, bet := range bets {
-				if bet.EventID == req.EventID && bet.Status == "pending" {
+				if bet.EventID == req.EventID && bet.Status == PENDING {
+					hasPendingBets = true
 					MU.Lock()
-					if req.Result == "win" {
+					if req.Result == WIN {
 						winAmount := bet.Amount * bet.Odds
 						Balances[uid] += winAmount
 						winnings += winAmount
-						bet.Status = "win"
+						bet.Status = WIN
 					} else {
-						bet.Status = "lose"
+						bet.Status = LOSE
 					}
 					updated = true
 					MU.Unlock()
 				}
+			}
+
+			// If no pending bets found for the event, log this information
+			if !hasPendingBets {
+				log.Printf("No pending bets for user %d on event %d\n", uid, req.EventID)
 			}
 
 			if updated {
